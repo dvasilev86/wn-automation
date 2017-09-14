@@ -23,6 +23,7 @@ public class BaseWebTest {
         DesiredCapabilities capability = DesiredCapabilities.chrome();
 
         driver = new RemoteWebDriver(new URL(Config.HUB_URL), capability);
+        driver.manage().window().maximize();
         mainPage = new MainPage(driver);
     }
 
