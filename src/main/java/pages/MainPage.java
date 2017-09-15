@@ -15,20 +15,21 @@ public class MainPage {
     private static final String PAGE_URL = "http://borisborisov.bg/user-accounts/";
     private RemoteWebDriver pageDriver;
 
+    // id identifiers
     private String idFirstNameInputField = "first-name";
     private String idLastNameInputField = "last-name";
     private String idEmailInputField = "email";
     private String idDateOfBirthInputField = "date-of-birth";
-    private String cssFirstNameColumn = "#firstName_1490";
 
+    // class identifiers
     private String classBlockingOverlay = ".blockUI.blockOverlay";
+    private String classNoResults = "dataTables_empty";
 
-    private String linkAddAccount = "Add Account";
+    // css identifiers
     private String cssAddAccount = "#add-account-form > button";
     private String cssFirstResultFirstName = "#accounts-table > tbody > tr:nth-child(1) > td:nth-child(3)";
     private String cssSearchForm = "#accounts-table_filter > label > input";
 
-    private String classNoResults = "dataTables_empty";
 
     public MainPage(RemoteWebDriver driver) {
         pageDriver = driver;
@@ -36,7 +37,8 @@ public class MainPage {
 
     public MainPage getMainPage() {
         pageDriver.get(PAGE_URL);
-        WebDriverWait wait = new WebDriverWait(pageDriver, 3);
+        WebDriverWait wait = new WebDriverWait(pageDriver, 2);
+        wait.until(ExpectedConditions.visibilityOf(pageDriver.findElement(By.cssSelector(classBlockingOverlay))));
         wait.until(ExpectedConditions.invisibilityOf(pageDriver.findElement(By.cssSelector(classBlockingOverlay))));
         return this;
     }
@@ -80,8 +82,7 @@ public class MainPage {
             WebDriverWait wait = new WebDriverWait(pageDriver, 2);
             wait.until(ExpectedConditions.presenceOfElementLocated(By.className(classNoResults)));
             return false;
-        }
-        catch (org.openqa.selenium.TimeoutException e){
+        } catch (org.openqa.selenium.TimeoutException e) {
             return true;
         }
     }

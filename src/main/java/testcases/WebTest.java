@@ -3,8 +3,10 @@ package testcases;
 import base.BaseWebTest;
 import common.Config;
 import common.Helpers;
+import common.InputConstants;
 import common.Messages;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -13,18 +15,18 @@ import org.junit.Test;
 public class WebTest extends BaseWebTest {
 
     @Test
-    public void Test() {
+    public void smokeTest() {
         mainPage.getMainPage();
     }
 
     @Test
     public void addAccSuccess() {
-        String uniqueEmail = Config.DEFAULT_PREFIX + Helpers.randomInput() + Config.DUMMY_EMAIL_PROVIDER;
+        String uniqueEmail = Helpers.createEmail();
         mainPage.getMainPage()
-                .inputFirstName(Config.DEFAULT_NAME)
-                .inputLastName(Config.DEFAULT_NAME)
+                .inputFirstName(InputConstants.DEFAULT_NAME)
+                .inputLastName(InputConstants.DEFAULT_NAME)
                 .inputEmail(uniqueEmail)
-                .inputDobNoDatepicker(Config.DEFAULT_DOB)
+                .inputDobNoDatepicker(InputConstants.DEFAULT_DOB)
                 .addAccount()
                 .search(uniqueEmail);
         Assert.assertTrue("table has no results", mainPage.tableHasResults());
@@ -42,10 +44,10 @@ public class WebTest extends BaseWebTest {
 
     @Test
     public void addAccDobInFutureFailure() throws org.openqa.selenium.TimeoutException {
-        String uniqueEmail = Config.DEFAULT_PREFIX + Helpers.randomInput() + Config.DUMMY_EMAIL_PROVIDER;
+        String uniqueEmail = Helpers.createEmail();
         mainPage.getMainPage()
-                .inputFirstName(Config.DEFAULT_NAME)
-                .inputLastName(Config.DEFAULT_NAME)
+                .inputFirstName(InputConstants.DEFAULT_NAME)
+                .inputLastName(InputConstants.DEFAULT_NAME)
                 .inputEmail(uniqueEmail)
                 .inputDobNoDatepicker(Helpers.createFutureDate())
                 .addAccount();
@@ -57,12 +59,12 @@ public class WebTest extends BaseWebTest {
 
     @Test
     public void addAccWrongEmailFormatFailure() {
-        String uniqueEmail = Config.DEFAULT_PREFIX + Helpers.randomInput() + Config.DUMMY_EMAIL_PROVIDER;
+        String uniqueEmail = Helpers.createEmail();
         mainPage.getMainPage()
-                .inputFirstName(Config.DEFAULT_NAME)
-                .inputLastName(Config.DEFAULT_NAME)
+                .inputFirstName(InputConstants.DEFAULT_NAME)
+                .inputLastName(InputConstants.DEFAULT_NAME)
                 .inputEmail("this_is_invalid_email@nodomain")
-                .inputDobNoDatepicker(Config.DEFAULT_DOB)
+                .inputDobNoDatepicker(InputConstants.DEFAULT_DOB)
                 .addAccount();
         String alertMessage = mainPage.waitForAlertAndGetText();
         Assert.assertTrue("alert present but has wrong text", alertMessage.contains(Messages.FAILED_TO_ADD_ACCOUNT));
@@ -71,21 +73,25 @@ public class WebTest extends BaseWebTest {
     }
 
     @Test
+    @Ignore
     public void updateAccFirstNameSuccess() {
         mainPage.getMainPage();
     }
 
     @Test
+    @Ignore
     public void updateAccDobSuccess() {
         mainPage.getMainPage();
     }
 
     @Test
+    @Ignore
     public void filterResultsSuccess() {
 
     }
 
     @Test
+    @Ignore
     public void deleteAccSuccess() {
         mainPage.getMainPage();
     }

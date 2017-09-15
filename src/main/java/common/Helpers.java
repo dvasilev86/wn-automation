@@ -1,6 +1,7 @@
 package common;
 
 import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.util.Date;
 import java.util.UUID;
 
@@ -17,6 +18,16 @@ public class Helpers {
         Date today = new Date();
         Date tomorrow = new Date(today.getTime() + (1000 * 60 * 60 * 24));
         return new SimpleDateFormat(Config.DEFAULT_DATE_FORMAT).format(tomorrow);
+    }
+
+    public static String createEmail() {
+        return Config.DEFAULT_PREFIX + randomInput() + Config.DUMMY_EMAIL_PROVIDER;
+    }
+
+    public static long getEpochTimeNow() {
+        Instant instant = Instant.now();
+        return instant.toEpochMilli();
+
     }
 
 }
