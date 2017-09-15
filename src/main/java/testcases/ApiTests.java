@@ -4,6 +4,7 @@ import base.BaseApiTest;
 import com.google.gson.JsonObject;
 import common.*;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import rest.AddAccountRequest;
 import retrofit2.Response;
@@ -40,6 +41,14 @@ public class ApiTests extends BaseApiTest {
         Assert.assertEquals(Codes.RESPONSE_OK, response.code());
         String actualEmail = ((JsonObject) response.body()).get("email").getAsString();
         Assert.assertEquals(email, actualEmail);
+    }
+
+    @Test
+    public void getNonexistentAccountIdFailure() throws IOException {
+        String id = "1";
+        Response response = api.deleteSingleAccount(id).execute();
+        response = api.getSingleAccount(id).execute();
+        Assert.assertEquals(Codes.RESPONSE_NOT_FOUND, response.code());
     }
 
     @Test
@@ -98,6 +107,20 @@ public class ApiTests extends BaseApiTest {
     }
 
     @Test
+    @Ignore
+    public void addAccountDobInTheFutureFailure() throws IOException {
+
+        AddAccountRequest addAccountRequest = new AddAccountRequest(
+                Helpers.createEmail(),
+                InputConstants.DEFAULT_NAME,
+                InputConstants.DEFAULT_NAME,
+                "");
+        Response response = api.addAccount(addAccountRequest).execute();
+        Assert.assertEquals(Codes.RESPONSE_BAD_REQUEST, response.code());
+        Assert.assertEquals(Messages.MISSING_DOB, response.errorBody().string());
+    }
+
+    @Test
     public void addAccountWordsOnlyFailure() throws IOException {
         AddAccountRequest addAccountRequest = new AddAccountRequest(
                 Helpers.createEmail(),
@@ -113,7 +136,7 @@ public class ApiTests extends BaseApiTest {
     public void addAccountFirstNameTooLongFailure() throws IOException {
         AddAccountRequest addAccountRequest = new AddAccountRequest(
                 Helpers.createEmail(),
-                "qwerqwerqwerqwerqwerqwerqwerqwerqwerqwerqwerqwerqwe", //51 chars long
+                InputConstants.LONG_NAME_51_CHARS,
                 InputConstants.DEFAULT_NAME,
                 Helpers.getEpochTimeNow());
         Response response = api.addAccount(addAccountRequest).execute();
@@ -126,7 +149,7 @@ public class ApiTests extends BaseApiTest {
         AddAccountRequest addAccountRequest = new AddAccountRequest(
                 Helpers.createEmail(),
                 InputConstants.DEFAULT_NAME,
-                "qwerqwerqwerqwerqwerqwerqwerqwerqwerqwerqwerqwerqwe", //51 chars long
+                InputConstants.LONG_NAME_51_CHARS,
                 Helpers.getEpochTimeNow());
         Response response = api.addAccount(addAccountRequest).execute();
         Assert.assertEquals(Codes.RESPONSE_BAD_REQUEST, response.code());
@@ -136,8 +159,7 @@ public class ApiTests extends BaseApiTest {
     @Test
     public void addAccountEmailTooLongFailure() throws IOException {
         AddAccountRequest addAccountRequest = new AddAccountRequest(
-                // 256 chars long, breaks the code
-                "qwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertq123456789012345678901234567890123456789012345678901234567890123456789012345678@qwertqwertqwertqwertqwert.qwert",
+                InputConstants.LONG_EMAIL_256_CHARS,
                 InputConstants.DEFAULT_NAME, //51 chars long
                 InputConstants.DEFAULT_NAME,
                 Helpers.getEpochTimeNow());
@@ -316,6 +338,7 @@ public class ApiTests extends BaseApiTest {
     }
 
     @Test
+    @Ignore
     public void updateInvalidDateOfBirthFailure() throws IOException {
         AddAccountRequest addAccountRequest = prepareGenericAccountRequest();
         Response response = api.addAccount(addAccountRequest).execute();
@@ -346,7 +369,7 @@ public class ApiTests extends BaseApiTest {
 
         String id = ((JsonObject) response.body()).get("id").getAsString();
         String desiredField = "firstName_" + id;
-        String desiredValue = "qwerqwerqwerqwerqwerqwerqwerqwerqwerqwerqwerqwerqwe"; //51 characters long
+        String desiredValue = InputConstants.LONG_NAME_51_CHARS;
         response = api.updateField(desiredField, desiredValue).execute();
         Assert.assertEquals(Codes.RESPONSE_BAD_REQUEST, response.code());
         Assert.assertEquals(Messages.MAX_LENGTH_FIRST_NAME, response.errorBody().string());
@@ -365,7 +388,7 @@ public class ApiTests extends BaseApiTest {
 
         String id = ((JsonObject) response.body()).get("id").getAsString();
         String desiredField = "lastName_" + id;
-        String desiredValue = "qwerqwerqwerqwerqwerqwerqwerqwerqwerqwerqwerqwerqwe"; //51 characters long
+        String desiredValue = InputConstants.LONG_NAME_51_CHARS;
         response = api.updateField(desiredField, desiredValue).execute();
         Assert.assertEquals(Codes.RESPONSE_BAD_REQUEST, response.code());
         Assert.assertEquals(Messages.MAX_LENGTH_LAST_NAME, response.errorBody().string());
@@ -386,7 +409,7 @@ public class ApiTests extends BaseApiTest {
         String desiredField = "email_" + id;
 
         // desiredValue is 256 chars, which raises DatabaseException and shows it to the user
-        String desiredValue = "qwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertq123456789012345678901234567890123456789012345678901234567890123456789012345678@qwertqwertqwertqwertqwert.qwert";
+        String desiredValue = InputConstants.LONG_EMAIL_256_CHARS;
         response = api.updateField(desiredField, desiredValue).execute();
         Assert.assertEquals(Codes.RESPONSE_BAD_REQUEST, response.code());
         Assert.assertEquals(Messages.MAX_LENGTH_EMAIL, response.errorBody().string());
@@ -395,6 +418,31 @@ public class ApiTests extends BaseApiTest {
 
         String actualValue = ((JsonObject) response.body()).get("email").getAsString();
         Assert.assertNotEquals(desiredValue, actualValue);
+    }
+
+    @Test
+    @Ignore
+    public void updateDobInTheFutureFailure() throws IOException {
+        AddAccountRequest addAccountRequest = prepareGenericAccountRequest();
+        Response response = api.addAccount(addAccountRequest).execute();
+        Assert.assertEquals(Codes.RESPONSE_CREATED, response.code());
+
+        String id = ((JsonObject) response.body()).get("id").getAsString();
+        String desiredField = "dateOfBirth_" + id;
+        String desiredValue = Helpers.createFutureDate();
+        response = api.updateField(desiredField, desiredValue).execute();
+        Assert.assertEquals(Codes.RESPONSE_BAD_REQUEST, response.code());
+        Assert.assertEquals(Messages.DOB_CANNOT_BE_IN_THE_FUTURE, response.errorBody().string());
+        response = api.getSingleAccount(id).execute();
+        Assert.assertEquals(Codes.RESPONSE_OK, response.code());
+
+        String unformattedDate = ((JsonObject) response.body()).get("dateOfBirth").getAsString();
+        Date date = new Date(Long.parseLong(unformattedDate));
+        DateFormat format = new SimpleDateFormat("dd/MM/yyyy HH:mm");
+        format.setTimeZone(TimeZone.getTimeZone(""));
+
+        String actualValue = format.format(date);
+        Assert.assertEquals(desiredValue, actualValue);
     }
 
     private AddAccountRequest prepareGenericAccountRequest() {
