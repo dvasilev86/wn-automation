@@ -17,4 +17,9 @@ public class Messages {
     public static final String WORDS_ONLY_ALLOWED_IN_NAME = "\"Words only allowed for property firstName\"";
     public static final String INVALID_EMAIL = "\"Email [invalid@email] is not valid\""; //depends on input constant
 
+    public static final String MAX_LENGTH_FIRST_NAME = "Max length of 50 reached for property firstName";
+    public static final String MAX_LENGTH_LAST_NAME = "Max length of 50 reached for property lastName";
+    public static final String MAX_LENGTH_EMAIL = "Max length of 50 reached for property email"; //debatable, bug
+
+
 }

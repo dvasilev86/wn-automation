@@ -9,6 +9,10 @@ import rest.AddAccountRequest;
 import retrofit2.Response;
 
 import java.io.IOException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.TimeZone;
 
 /**
  * @author by dvasilev on 15-Sep-17.
@@ -18,8 +22,7 @@ public class ApiTests extends BaseApiTest {
     @Test
     public void getAllAccountsSuccess() throws IOException {
         Response response = api.getAllAccounts().execute();
-        Assert.assertNotEquals("server error!", Codes.RESPONSE_SERVER_ERROR, response.code());
-        Assert.assertEquals("response code is not OK", Codes.RESPONSE_OK, response.code());
+        Assert.assertEquals(Codes.RESPONSE_OK, response.code());
     }
 
     @Test
@@ -41,11 +44,7 @@ public class ApiTests extends BaseApiTest {
 
     @Test
     public void addAccountSuccess() throws IOException {
-        AddAccountRequest addAccountRequest = new AddAccountRequest(
-                Helpers.createEmail(),
-                InputConstants.DEFAULT_NAME,
-                InputConstants.DEFAULT_NAME,
-                Helpers.getEpochTimeNow());
+        AddAccountRequest addAccountRequest = prepareGenericAccountRequest();
         Response response = api.addAccount(addAccountRequest).execute();
         Assert.assertEquals("response code is wrong", Codes.RESPONSE_CREATED, response.code());
     }
@@ -99,7 +98,7 @@ public class ApiTests extends BaseApiTest {
     }
 
     @Test
-    public void addAccountDigitsInNameFailure() throws IOException {
+    public void addAccountWordsOnlyFailure() throws IOException {
         AddAccountRequest addAccountRequest = new AddAccountRequest(
                 Helpers.createEmail(),
                 "test123",
@@ -108,6 +107,43 @@ public class ApiTests extends BaseApiTest {
         Response response = api.addAccount(addAccountRequest).execute();
         Assert.assertEquals(Codes.RESPONSE_BAD_REQUEST, response.code());
         Assert.assertEquals(Messages.WORDS_ONLY_ALLOWED_IN_NAME, response.errorBody().string());
+    }
+
+    @Test
+    public void addAccountFirstNameTooLongFailure() throws IOException {
+        AddAccountRequest addAccountRequest = new AddAccountRequest(
+                Helpers.createEmail(),
+                "qwerqwerqwerqwerqwerqwerqwerqwerqwerqwerqwerqwerqwe", //51 chars long
+                InputConstants.DEFAULT_NAME,
+                Helpers.getEpochTimeNow());
+        Response response = api.addAccount(addAccountRequest).execute();
+        Assert.assertEquals(Codes.RESPONSE_BAD_REQUEST, response.code());
+        Assert.assertTrue(response.errorBody().string().contains(Messages.MAX_LENGTH_FIRST_NAME));
+    }
+
+    @Test
+    public void addAccountLastNameTooLongFailure() throws IOException {
+        AddAccountRequest addAccountRequest = new AddAccountRequest(
+                Helpers.createEmail(),
+                InputConstants.DEFAULT_NAME,
+                "qwerqwerqwerqwerqwerqwerqwerqwerqwerqwerqwerqwerqwe", //51 chars long
+                Helpers.getEpochTimeNow());
+        Response response = api.addAccount(addAccountRequest).execute();
+        Assert.assertEquals(Codes.RESPONSE_BAD_REQUEST, response.code());
+        Assert.assertTrue(response.errorBody().string().contains(Messages.MAX_LENGTH_LAST_NAME));
+    }
+
+    @Test
+    public void addAccountEmailTooLongFailure() throws IOException {
+        AddAccountRequest addAccountRequest = new AddAccountRequest(
+                // 256 chars long, breaks the code
+                "qwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertq123456789012345678901234567890123456789012345678901234567890123456789012345678@qwertqwertqwertqwertqwert.qwert",
+                InputConstants.DEFAULT_NAME, //51 chars long
+                InputConstants.DEFAULT_NAME,
+                Helpers.getEpochTimeNow());
+        Response response = api.addAccount(addAccountRequest).execute();
+        Assert.assertEquals(Codes.RESPONSE_BAD_REQUEST, response.code());
+        Assert.assertTrue(response.errorBody().string().contains(Messages.MAX_LENGTH_EMAIL));
     }
 
     @Test
@@ -124,11 +160,7 @@ public class ApiTests extends BaseApiTest {
 
     @Test
     public void deleteAccountSuccess() throws IOException {
-        AddAccountRequest addAccountRequest = new AddAccountRequest(
-                Helpers.createEmail(),
-                InputConstants.DEFAULT_NAME,
-                InputConstants.DEFAULT_NAME,
-                Helpers.getEpochTimeNow());
+        AddAccountRequest addAccountRequest = prepareGenericAccountRequest();
         Response response = api.addAccount(addAccountRequest).execute();
         Assert.assertEquals(Codes.RESPONSE_CREATED, response.code());
         String id = ((JsonObject) response.body()).get("id").getAsString();
@@ -136,5 +168,240 @@ public class ApiTests extends BaseApiTest {
         Assert.assertEquals(Codes.RESPONSE_OK, response.code());
         response = api.getSingleAccount(id).execute();
         Assert.assertEquals(Codes.RESPONSE_NOT_FOUND, response.code());
+    }
+
+    @Test
+    public void deleteAccountNotFoundFailure() throws IOException {
+        AddAccountRequest addAccountRequest = prepareGenericAccountRequest();
+        Response response = api.addAccount(addAccountRequest).execute();
+        Assert.assertEquals(Codes.RESPONSE_CREATED, response.code());
+        String id = ((JsonObject) response.body()).get("id").getAsString();
+        response = api.deleteSingleAccount(id).execute();
+        Assert.assertEquals(Codes.RESPONSE_OK, response.code());
+        response = api.getSingleAccount(id).execute();
+        Assert.assertEquals(Codes.RESPONSE_NOT_FOUND, response.code());
+        response = api.deleteSingleAccount(id).execute();
+        Assert.assertEquals(Codes.RESPONSE_NOT_FOUND, response.code());
+    }
+
+    @Test
+    public void updateFirstNameSuccess() throws IOException {
+        AddAccountRequest addAccountRequest = prepareGenericAccountRequest();
+        Response response = api.addAccount(addAccountRequest).execute();
+        Assert.assertEquals(Codes.RESPONSE_CREATED, response.code());
+
+        String id = ((JsonObject) response.body()).get("id").getAsString();
+        String desiredField = "firstName_" + id;
+        String desiredValue = "newValue";
+        response = api.updateField(desiredField, desiredValue).execute();
+        Assert.assertEquals(Codes.RESPONSE_OK, response.code());
+        response = api.getSingleAccount(id).execute();
+        Assert.assertEquals(Codes.RESPONSE_OK, response.code());
+
+        String actualValue = ((JsonObject) response.body()).get("firstName").getAsString();
+        Assert.assertEquals(desiredValue, actualValue);
+    }
+
+    @Test
+    public void updateLastNameSuccess() throws IOException {
+        AddAccountRequest addAccountRequest = prepareGenericAccountRequest();
+        Response response = api.addAccount(addAccountRequest).execute();
+        Assert.assertEquals(Codes.RESPONSE_CREATED, response.code());
+
+        String id = ((JsonObject) response.body()).get("id").getAsString();
+        String desiredField = "lastName_" + id;
+        String desiredValue = "newValue";
+        response = api.updateField(desiredField, desiredValue).execute();
+        Assert.assertEquals(Codes.RESPONSE_OK, response.code());
+        response = api.getSingleAccount(id).execute();
+        Assert.assertEquals(Codes.RESPONSE_OK, response.code());
+
+        String actualValue = ((JsonObject) response.body()).get("lastName").getAsString();
+        Assert.assertEquals(desiredValue, actualValue);
+    }
+
+    @Test
+    public void updateEmailSuccess() throws IOException {
+        AddAccountRequest addAccountRequest = prepareGenericAccountRequest();
+        Response response = api.addAccount(addAccountRequest).execute();
+        Assert.assertEquals(Codes.RESPONSE_CREATED, response.code());
+
+        String id = ((JsonObject) response.body()).get("id").getAsString();
+        String desiredField = "email_" + id;
+        String desiredValue = Helpers.createEmail();
+        response = api.updateField(desiredField, desiredValue).execute();
+        Assert.assertEquals(Codes.RESPONSE_OK, response.code());
+        response = api.getSingleAccount(id).execute();
+        Assert.assertEquals(Codes.RESPONSE_OK, response.code());
+
+        String actualValue = ((JsonObject) response.body()).get("email").getAsString();
+        Assert.assertEquals(desiredValue, actualValue);
+    }
+
+    @Test
+    public void updateDobSuccess() throws IOException {
+        AddAccountRequest addAccountRequest = prepareGenericAccountRequest();
+        Response response = api.addAccount(addAccountRequest).execute();
+        Assert.assertEquals(Codes.RESPONSE_CREATED, response.code());
+
+        String id = ((JsonObject) response.body()).get("id").getAsString();
+        String desiredField = "dateOfBirth_" + id;
+        String desiredValue = InputConstants.DEFAULT_DOB;
+        response = api.updateField(desiredField, desiredValue).execute();
+        Assert.assertEquals(Codes.RESPONSE_OK, response.code());
+        response = api.getSingleAccount(id).execute();
+        Assert.assertEquals(Codes.RESPONSE_OK, response.code());
+
+        String unformattedDate = ((JsonObject) response.body()).get("dateOfBirth").getAsString();
+        Date date = new Date(Long.parseLong(unformattedDate));
+        DateFormat format = new SimpleDateFormat("dd/MM/yyyy HH:mm");
+        format.setTimeZone(TimeZone.getTimeZone(""));
+
+        String actualValue = format.format(date);
+        Assert.assertEquals(desiredValue, actualValue);
+    }
+
+    @Test
+    public void updateFirstNameWordsOnlyFailure() throws IOException {
+        AddAccountRequest addAccountRequest = prepareGenericAccountRequest();
+        Response response = api.addAccount(addAccountRequest).execute();
+        Assert.assertEquals(Codes.RESPONSE_CREATED, response.code());
+
+        String id = ((JsonObject) response.body()).get("id").getAsString();
+        String desiredField = "firstName_" + id;
+        String desiredValue = "newValue123";
+        response = api.updateField(desiredField, desiredValue).execute();
+        Assert.assertEquals(Codes.RESPONSE_BAD_REQUEST, response.code());
+        response = api.getSingleAccount(id).execute();
+        Assert.assertEquals(Codes.RESPONSE_OK, response.code());
+
+        String actualValue = ((JsonObject) response.body()).get("firstName").getAsString();
+        Assert.assertNotEquals(desiredValue, actualValue);
+    }
+
+    @Test
+    public void updateLastNameWordsOnlyFailure() throws IOException {
+        AddAccountRequest addAccountRequest = prepareGenericAccountRequest();
+        Response response = api.addAccount(addAccountRequest).execute();
+        Assert.assertEquals(Codes.RESPONSE_CREATED, response.code());
+
+        String id = ((JsonObject) response.body()).get("id").getAsString();
+        String desiredField = "lastName_" + id;
+        String desiredValue = "newValue123";
+        response = api.updateField(desiredField, desiredValue).execute();
+        Assert.assertEquals(Codes.RESPONSE_BAD_REQUEST, response.code());
+        response = api.getSingleAccount(id).execute();
+        Assert.assertEquals(Codes.RESPONSE_OK, response.code());
+
+        String actualValue = ((JsonObject) response.body()).get("lastName").getAsString();
+        Assert.assertNotEquals(desiredValue, actualValue);
+    }
+
+    @Test
+    public void updateInvalidEmailFailure() throws IOException {
+        AddAccountRequest addAccountRequest = prepareGenericAccountRequest();
+        Response response = api.addAccount(addAccountRequest).execute();
+        Assert.assertEquals(Codes.RESPONSE_CREATED, response.code());
+
+        String id = ((JsonObject) response.body()).get("id").getAsString();
+        String desiredField = "email_" + id;
+        String desiredValue = InputConstants.INVALID_EMAIL;
+        response = api.updateField(desiredField, desiredValue).execute();
+        Assert.assertEquals(Codes.RESPONSE_BAD_REQUEST, response.code());
+        response = api.getSingleAccount(id).execute();
+        Assert.assertEquals(Codes.RESPONSE_OK, response.code());
+
+        String actualValue = ((JsonObject) response.body()).get("email").getAsString();
+        Assert.assertNotEquals(desiredValue, actualValue);
+    }
+
+    @Test
+    public void updateInvalidDateOfBirthFailure() throws IOException {
+        AddAccountRequest addAccountRequest = prepareGenericAccountRequest();
+        Response response = api.addAccount(addAccountRequest).execute();
+        Assert.assertEquals(Codes.RESPONSE_CREATED, response.code());
+
+        String id = ((JsonObject) response.body()).get("id").getAsString();
+        String desiredField = "dateOfBirth_" + id;
+        String desiredValue = "something wrong";
+        response = api.updateField(desiredField, desiredValue).execute();
+        Assert.assertEquals(Codes.RESPONSE_BAD_REQUEST, response.code());
+        response = api.getSingleAccount(id).execute();
+        Assert.assertEquals(Codes.RESPONSE_OK, response.code());
+
+        String unformattedDate = ((JsonObject) response.body()).get("dateOfBirth").getAsString();
+        Date date = new Date(Long.parseLong(unformattedDate));
+        DateFormat format = new SimpleDateFormat("dd/MM/yyyy HH:mm");
+        format.setTimeZone(TimeZone.getTimeZone(""));
+
+        String actualValue = format.format(date);
+        Assert.assertNotEquals(desiredValue, actualValue);
+    }
+
+    @Test
+    public void updateFirstNameTooLongFailure() throws IOException {
+        AddAccountRequest addAccountRequest = prepareGenericAccountRequest();
+        Response response = api.addAccount(addAccountRequest).execute();
+        Assert.assertEquals(Codes.RESPONSE_CREATED, response.code());
+
+        String id = ((JsonObject) response.body()).get("id").getAsString();
+        String desiredField = "firstName_" + id;
+        String desiredValue = "qwerqwerqwerqwerqwerqwerqwerqwerqwerqwerqwerqwerqwe"; //51 characters long
+        response = api.updateField(desiredField, desiredValue).execute();
+        Assert.assertEquals(Codes.RESPONSE_BAD_REQUEST, response.code());
+        Assert.assertEquals(Messages.MAX_LENGTH_FIRST_NAME, response.errorBody().string());
+        response = api.getSingleAccount(id).execute();
+        Assert.assertEquals(Codes.RESPONSE_OK, response.code());
+
+        String actualValue = ((JsonObject) response.body()).get("firstName").getAsString();
+        Assert.assertNotEquals(desiredValue, actualValue);
+    }
+
+    @Test
+    public void updateLastNameTooLongFailure() throws IOException {
+        AddAccountRequest addAccountRequest = prepareGenericAccountRequest();
+        Response response = api.addAccount(addAccountRequest).execute();
+        Assert.assertEquals(Codes.RESPONSE_CREATED, response.code());
+
+        String id = ((JsonObject) response.body()).get("id").getAsString();
+        String desiredField = "lastName_" + id;
+        String desiredValue = "qwerqwerqwerqwerqwerqwerqwerqwerqwerqwerqwerqwerqwe"; //51 characters long
+        response = api.updateField(desiredField, desiredValue).execute();
+        Assert.assertEquals(Codes.RESPONSE_BAD_REQUEST, response.code());
+        Assert.assertEquals(Messages.MAX_LENGTH_LAST_NAME, response.errorBody().string());
+        response = api.getSingleAccount(id).execute();
+        Assert.assertEquals(Codes.RESPONSE_OK, response.code());
+
+        String actualValue = ((JsonObject) response.body()).get("lastName").getAsString();
+        Assert.assertNotEquals(desiredValue, actualValue);
+    }
+
+    @Test
+    public void updateEmailTooLongFailure() throws IOException {
+        AddAccountRequest addAccountRequest = prepareGenericAccountRequest();
+        Response response = api.addAccount(addAccountRequest).execute();
+        Assert.assertEquals(Codes.RESPONSE_CREATED, response.code());
+
+        String id = ((JsonObject) response.body()).get("id").getAsString();
+        String desiredField = "email_" + id;
+
+        // desiredValue is 256 chars, which raises DatabaseException and shows it to the user
+        String desiredValue = "qwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertqwertq123456789012345678901234567890123456789012345678901234567890123456789012345678@qwertqwertqwertqwertqwert.qwert";
+        response = api.updateField(desiredField, desiredValue).execute();
+        Assert.assertEquals(Codes.RESPONSE_BAD_REQUEST, response.code());
+        Assert.assertEquals(Messages.MAX_LENGTH_EMAIL, response.errorBody().string());
+        response = api.getSingleAccount(id).execute();
+        Assert.assertEquals(Codes.RESPONSE_OK, response.code());
+
+        String actualValue = ((JsonObject) response.body()).get("email").getAsString();
+        Assert.assertNotEquals(desiredValue, actualValue);
+    }
+
+    private AddAccountRequest prepareGenericAccountRequest() {
+        return new AddAccountRequest(
+                Helpers.createEmail(),
+                InputConstants.DEFAULT_NAME,
+                InputConstants.DEFAULT_NAME,
+                Helpers.getEpochTimeNow());
     }
 }
