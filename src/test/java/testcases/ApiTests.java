@@ -47,8 +47,8 @@ public class ApiTests extends BaseApiTest {
     @Test
     public void getNonexistentAccountIdFailure() throws IOException {
         String id = "1";
-        Response response = api.deleteSingleAccount(id).execute();
-        response = api.getSingleAccount(id).execute();
+        api.deleteSingleAccount(id).execute();
+        Response response = api.getSingleAccount(id).execute();
         Assert.assertEquals(Codes.RESPONSE_NOT_FOUND, response.code());
     }
 
