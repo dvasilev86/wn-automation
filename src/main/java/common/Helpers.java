@@ -1,5 +1,6 @@
 package common;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.Date;
@@ -28,6 +29,12 @@ public class Helpers {
         Instant instant = Instant.now();
         return instant.toEpochMilli();
 
+    }
+
+    public static long dateToEpoch(String desiredValue) throws ParseException {
+        SimpleDateFormat df = new SimpleDateFormat(Config.DEFAULT_DATE_FORMAT);
+        Date date = df.parse(desiredValue);
+        return date.getTime();
     }
 
 }

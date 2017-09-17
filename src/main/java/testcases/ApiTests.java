@@ -11,6 +11,7 @@ import retrofit2.Response;
 
 import java.io.IOException;
 import java.text.DateFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
@@ -107,17 +108,16 @@ public class ApiTests extends BaseApiTest {
     }
 
     @Test
-    @Ignore
-    public void addAccountDobInTheFutureFailure() throws IOException {
-
+    public void addAccountDobInTheFutureFailure() throws IOException, ParseException {
+        String desiredValue = Helpers.createFutureDate();
         AddAccountRequest addAccountRequest = new AddAccountRequest(
                 Helpers.createEmail(),
                 InputConstants.DEFAULT_NAME,
                 InputConstants.DEFAULT_NAME,
-                "");
+                Helpers.dateToEpoch(desiredValue));
         Response response = api.addAccount(addAccountRequest).execute();
         Assert.assertEquals(Codes.RESPONSE_BAD_REQUEST, response.code());
-        Assert.assertEquals(Messages.MISSING_DOB, response.errorBody().string());
+        Assert.assertEquals(Messages.DOB_CANNOT_BE_IN_THE_FUTURE, response.errorBody().string());
     }
 
     @Test
@@ -338,7 +338,6 @@ public class ApiTests extends BaseApiTest {
     }
 
     @Test
-    @Ignore
     public void updateInvalidDateOfBirthFailure() throws IOException {
         AddAccountRequest addAccountRequest = prepareGenericAccountRequest();
         Response response = api.addAccount(addAccountRequest).execute();
@@ -421,7 +420,6 @@ public class ApiTests extends BaseApiTest {
     }
 
     @Test
-    @Ignore
     public void updateDobInTheFutureFailure() throws IOException {
         AddAccountRequest addAccountRequest = prepareGenericAccountRequest();
         Response response = api.addAccount(addAccountRequest).execute();
