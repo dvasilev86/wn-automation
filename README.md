@@ -13,7 +13,9 @@ The project relies on an active and running selenium grid server, supporting Chr
 * Chrome Driver v. 2.32
 * Firefox (Gecko) Driver v. 0.19
 
-You are required to edit **HUB_URL** constant, located in **~/src/test/java/common/Config.java** with the URL where your selenium grid hub is running.
+Refer to http://www.seleniumhq.org/download/ for those executables.
+
+You are required to edit **HUB_URL** constant, located in ```~/src/test/java/common/Config.java``` with the URL where your selenium grid hub is running.
 
 Other requirements useful to mention are: 
 * Windows 7/8/10, Mac OS X 10.9 or higher, Ubuntu LTS 12.04 or higher
