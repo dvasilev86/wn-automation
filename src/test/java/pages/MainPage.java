@@ -1,11 +1,12 @@
 package pages;
 
-import common.Messages;
-import org.openqa.selenium.Alert;
-import org.openqa.selenium.By;
+import org.openqa.selenium.*;
 import org.openqa.selenium.remote.RemoteWebDriver;
+import org.openqa.selenium.support.ui.ExpectedCondition;
 import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
+import sun.applet.Main;
 
 /**
  * @author by dvasilev on 13-Sep-17.
@@ -27,9 +28,16 @@ public class MainPage {
 
     // css identifiers
     private String cssAddAccount = "#add-account-form > button";
-    private String cssFirstResultFirstName = "#accounts-table > tbody > tr:nth-child(1) > td:nth-child(3)";
     private String cssSearchForm = "#accounts-table_filter > label > input";
+    private String cssDeleteFirstAccountButton = "#accounts-table > tbody > tr:nth-child(1) > td.delete > a";
 
+    private String cssFirstResultFirstName = "#accounts-table > tbody > tr:nth-child(1) > td:nth-child(1)";
+    private String cssFirstResultLastName = "#accounts-table > tbody > tr:nth-child(1) > td:nth-child(2)";
+    private String cssFirstResultEmail = "#accounts-table > tbody > tr:nth-child(1) > td:nth-child(3)";
+    private String cssFirstResultDob = "#accounts-table > tbody > tr:nth-child(1) > td:nth-child(4)";
+    private String cssRows = "#accounts-table > tbody > tr";
+
+    private String cssEntriesPerPageSelector = "#accounts-table_length > label > select";
 
     public MainPage(RemoteWebDriver driver) {
         pageDriver = driver;
@@ -73,8 +81,18 @@ public class MainPage {
         return this;
     }
 
-    public String getEmailOfFirstGridItem() {
+    public String getFirstNameOfFirstGridItem() {
         return pageDriver.findElementByCssSelector(cssFirstResultFirstName).getText();
+    }
+    public String getLastNameOfFirstGridItem() {
+        return pageDriver.findElementByCssSelector(cssFirstResultLastName).getText();
+    }
+
+    public String getEmailOfFirstGridItem() {
+        return pageDriver.findElementByCssSelector(cssFirstResultEmail).getText();
+    }
+    public String getDobOfFirstGridItem() {
+        return pageDriver.findElementByCssSelector(cssFirstResultDob).getText();
     }
 
     public boolean tableHasResults() {
@@ -87,11 +105,25 @@ public class MainPage {
         }
     }
 
-    public MainPage changeEntriesPerPage() {
-
+    public MainPage deleteDisplayedAccountByEmail(String email) {
+        WebDriverWait wait = new WebDriverWait(pageDriver, 2);
+        wait.until(ExpectedConditions.textToBe(By.cssSelector(cssFirstResultEmail), email));
+        pageDriver.findElementByCssSelector(cssDeleteFirstAccountButton).click();
+        wait.until(ExpectedConditions.alertIsPresent());
+        Alert alert = pageDriver.switchTo().alert();
+        alert.accept();
         return this;
     }
 
+    public MainPage changeEntriesPerPage(String desiredEntries) {
+        Select selector = new Select(pageDriver.findElementByCssSelector(cssEntriesPerPageSelector));
+        selector.selectByValue(desiredEntries);
+        return this;
+    }
+
+    public int getRowsCount() {
+        return pageDriver.findElementsByCssSelector(cssRows).size();
+    }
     public MainPage sortByFieldName() {
 
         return this;
@@ -117,22 +149,61 @@ public class MainPage {
         return this;
     }
 
-    public MainPage updateFirstName() {
+    public MainPage updateFirstName(String updatedString) {
+        WebElement ele = pageDriver.findElementByCssSelector(cssFirstResultFirstName);
+        ele.click();
+        ele = pageDriver.findElementByCssSelector(cssFirstResultFirstName).findElement(new By.ByTagName("input"));
+        ele.clear();
+        ele.sendKeys(updatedString);
+        ele.sendKeys(Keys.RETURN);
 
         return this;
     }
 
-    public MainPage updateLastName() {
+    public MainPage updateLastName(String updatedString) {
+        WebElement ele = pageDriver.findElementByCssSelector(cssFirstResultLastName);
+        ele.click();
+        ele = pageDriver.findElementByCssSelector(cssFirstResultLastName).findElement(new By.ByTagName("input"));
+        ele.clear();
+        ele.sendKeys(updatedString);
+        ele.sendKeys(Keys.RETURN);
 
         return this;
     }
 
-    public MainPage updateEmail() {
+    public MainPage updateEmail(String updatedString) {
+        WebElement ele = pageDriver.findElementByCssSelector(cssFirstResultEmail);
+        ele.click();
+        ele = pageDriver.findElementByCssSelector(cssFirstResultEmail).findElement(new By.ByTagName("input"));
+        ele.clear();
+        ele.sendKeys(updatedString);
+        ele.sendKeys(Keys.RETURN);
 
+        try {
+            WebDriverWait wait = new WebDriverWait(pageDriver, 2);
+            wait.until(ExpectedConditions.textToBe(By.cssSelector(cssFirstResultEmail), updatedString));
+        }
+        catch (TimeoutException e) {
+            System.out.println("timeout exception");
+        }
         return this;
     }
 
-    public MainPage updateDateOfBirth() {
+    public MainPage updateDateOfBirth(String updatedString) {
+        WebElement ele = pageDriver.findElementByCssSelector(cssFirstResultDob);
+        ele.click();
+        ele = pageDriver.findElementByCssSelector(cssFirstResultDob).findElement(new By.ByTagName("input"));
+        ele.clear();
+        ele.sendKeys(updatedString);
+        ele.sendKeys(Keys.RETURN);
+
+        try {
+            WebDriverWait wait = new WebDriverWait(pageDriver, 2);
+            wait.until(ExpectedConditions.textToBe(By.cssSelector(cssFirstResultDob), updatedString));
+        }
+        catch (TimeoutException e) {
+            System.out.println("timeout exception");
+        }
 
         return this;
     }

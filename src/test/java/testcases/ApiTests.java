@@ -68,7 +68,9 @@ public class ApiTests extends BaseApiTest {
                 Helpers.getEpochTimeNow());
         Response response = api.addAccount(addAccountRequest).execute();
         Assert.assertEquals(Codes.RESPONSE_BAD_REQUEST, response.code());
-        Assert.assertEquals(Messages.MISSING_FIRST_NAME, response.errorBody().string());
+//        Assert.assertEquals(Messages.MISSING_FIRST_NAME, response.errorBody().string());
+        Assert.assertTrue(response.errorBody().string().contains(Messages.MISSING_FIRST_NAME));
+
     }
 
     @Test
@@ -80,7 +82,8 @@ public class ApiTests extends BaseApiTest {
                 Helpers.getEpochTimeNow());
         Response response = api.addAccount(addAccountRequest).execute();
         Assert.assertEquals(Codes.RESPONSE_BAD_REQUEST, response.code());
-        Assert.assertEquals(Messages.MISSING_LAST_NAME, response.errorBody().string());
+//        Assert.assertEquals(Messages.MISSING_LAST_NAME, response.errorBody().string());
+        Assert.assertTrue(response.errorBody().string().contains(Messages.MISSING_LAST_NAME));
     }
 
     @Test
@@ -92,7 +95,21 @@ public class ApiTests extends BaseApiTest {
                 Helpers.getEpochTimeNow());
         Response response = api.addAccount(addAccountRequest).execute();
         Assert.assertEquals(Codes.RESPONSE_BAD_REQUEST, response.code());
-        Assert.assertEquals(Messages.MISSING_EMAIL, response.errorBody().string());
+//        Assert.assertEquals(Messages.MISSING_EMAIL, response.errorBody().string());
+        Assert.assertTrue(response.errorBody().string().contains(Messages.MISSING_EMAIL));
+    }
+
+    @Test
+    public void addAccountEmptyDobFailure() throws IOException {
+        AddAccountRequest addAccountRequest = new AddAccountRequest(
+                Helpers.createEmail(),
+                InputConstants.DEFAULT_NAME,
+                InputConstants.DEFAULT_NAME,
+                null);
+        Response response = api.addAccount(addAccountRequest).execute();
+        Assert.assertEquals(Codes.RESPONSE_BAD_REQUEST, response.code());
+//        Assert.assertEquals(Messages.MISSING_DOB, response.errorBody().string());
+        Assert.assertTrue(response.errorBody().string().contains(Messages.MISSING_DOB));
     }
 
     @Test
@@ -101,10 +118,10 @@ public class ApiTests extends BaseApiTest {
                 Helpers.createEmail(),
                 InputConstants.DEFAULT_NAME,
                 InputConstants.DEFAULT_NAME,
-                null);
+                "invalid date");
         Response response = api.addAccount(addAccountRequest).execute();
         Assert.assertEquals(Codes.RESPONSE_BAD_REQUEST, response.code());
-        Assert.assertEquals(Messages.MISSING_DOB, response.errorBody().string());
+        Assert.assertEquals("invalid date", response.errorBody().string()); //bug, needs to be added after fix
     }
 
     @Test
@@ -117,7 +134,8 @@ public class ApiTests extends BaseApiTest {
                 Helpers.dateToEpoch(desiredValue));
         Response response = api.addAccount(addAccountRequest).execute();
         Assert.assertEquals(Codes.RESPONSE_BAD_REQUEST, response.code());
-        Assert.assertEquals(Messages.DOB_CANNOT_BE_IN_THE_FUTURE, response.errorBody().string());
+//        Assert.assertEquals(Messages.DOB_CANNOT_BE_IN_THE_FUTURE, response.errorBody().string());
+        Assert.assertTrue(response.errorBody().string().contains(Messages.DOB_CANNOT_BE_IN_THE_FUTURE));
     }
 
     @Test
@@ -129,7 +147,8 @@ public class ApiTests extends BaseApiTest {
                 Helpers.getEpochTimeNow());
         Response response = api.addAccount(addAccountRequest).execute();
         Assert.assertEquals(Codes.RESPONSE_BAD_REQUEST, response.code());
-        Assert.assertEquals(Messages.WORDS_ONLY_ALLOWED_IN_NAME, response.errorBody().string());
+//        Assert.assertEquals(Messages.WORDS_ONLY_ALLOWED_IN_NAME, response.errorBody().string());
+        Assert.assertTrue(response.errorBody().string().contains(Messages.WORDS_ONLY_ALLOWED_IN_NAME));
     }
 
     @Test
@@ -160,7 +179,7 @@ public class ApiTests extends BaseApiTest {
     public void addAccountEmailTooLongFailure() throws IOException {
         AddAccountRequest addAccountRequest = new AddAccountRequest(
                 InputConstants.LONG_EMAIL_256_CHARS,
-                InputConstants.DEFAULT_NAME, //51 chars long
+                InputConstants.DEFAULT_NAME,
                 InputConstants.DEFAULT_NAME,
                 Helpers.getEpochTimeNow());
         Response response = api.addAccount(addAccountRequest).execute();
@@ -177,7 +196,8 @@ public class ApiTests extends BaseApiTest {
                 Helpers.getEpochTimeNow());
         Response response = api.addAccount(addAccountRequest).execute();
         Assert.assertEquals(Codes.RESPONSE_BAD_REQUEST, response.code());
-        Assert.assertEquals(Messages.INVALID_EMAIL, response.errorBody().string());
+//        Assert.assertEquals(Messages.INVALID_EMAIL, response.errorBody().string());
+        Assert.assertTrue(response.errorBody().string().contains(Messages.INVALID_EMAIL));
     }
 
     @Test
